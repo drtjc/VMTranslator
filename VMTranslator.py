@@ -217,6 +217,13 @@ base_addr: Dict[str, int] = {
     'local': 1015
 }
 
+pointers: Dict[str, str] = {
+    'stack': 'SP',
+    'local': 'LCL',
+    'argument': 'ARG',
+    'this': 'THIS',
+    'that': 'THAT'
+}
 
 # Parser ###############################################################
 class Parser():
@@ -261,8 +268,38 @@ class Parser():
 #LCL = RAM[1]
 #base addr local segment = 1015
 
+# @SP, @LCL, @ARG, @THIS, @THAT
 
 
+# push constant i
+# *SP = i, SP++
+# no pop constant operation
+
+# STATIC
+# static.i -> @file.i
+# e.g if test.vm
+
+# static 5 -> @test.5
+# pop static 5
+# D = stack.pop
+# @test.5
+# M=D
+
+# hack assembler will map on RAM[16] .. RAM[255]
+
+
+## pointer
+## push pointer 0 - acceses THIS
+## *SP = THIS, SP++
+
+## push pointer 1 - acceses THAT
+## *SP = THAT, SP++
+
+## pop pointer 0 - acceses THIS
+## SP--, THIS = *SP
+
+## pop pointer 1 - acceses THAT
+## SP--, THAT = *SP
 
 
 #add
@@ -279,6 +316,9 @@ class Parser():
 #push segment i
 
 
+## TEMP - base addr is hard coded as 5
+
+##### FOR LOCAL, ARGUMENT, THIS, THAT
 # pop local 2
 # addr = LCL+2, SP--, *addr=*SP
 
@@ -301,6 +341,13 @@ class Parser():
 # @addr
 # A=M // A = RAM[addr]
 # M=D // RAM[addr] = RAM[RAM[SP]]
+
+
+# push local i
+# addr = LCL+i, *SP=*addr, SP++
+
+
+
 
 
 ## D = *p
