@@ -268,6 +268,9 @@ class Parser():
 # CodeWriter ###########################################################
 class CodeWriter():
     
+    def __init__(self, file: str):
+        self.file = file
+
     def write(self, command: CommandType, arg1: str, arg2: str):
         pass
 
@@ -334,15 +337,7 @@ class CodeWriter():
         instr0 = ['// addr=' + pms + '+' + str(i)]
         return instr0 + self._eq_d(pms) + self._add_const(i) + self._d_eq('addr')    
        
-    def _pop(self, ms: str, i: int) -> str:
-        # applies to local, argument, this and that memory segments
-        # pop ms i
-        # addr=ms+i, SP--, *addr=*SP        
-        instr0 = ['// pop ' + ms + ' ' + str(i)]
-        instr = instr0 + self._ms_offset(ms, i) + self._dec_SP() + self._p_eq_pSP('addr')
-        return '\n'.join(instr) + '\n\n' 
-
-    def _push(self, ms: str, i: int) -> str:
+    def _push_p(self, ms: str, i: int) -> str:
         # applies to local, argument, this and that memory segments
         # push ms i
         # addr=ms+i, *SP=*addr, SP++       
@@ -350,19 +345,71 @@ class CodeWriter():
         instr = instr0 + self._ms_offset(ms, i) + self._pSP_eq_p('addr') + self._inc_SP()
         return '\n'.join(instr) + '\n\n' 
 
+    def _pop_p(self, ms: str, i: int) -> str:
+        # applies to local, argument, this and that memory segments
+        # pop ms i
+        # addr=ms+i, SP--, *addr=*SP        
+        instr0 = ['// pop ' + ms + ' ' + str(i)]
+        instr = instr0 + self._ms_offset(ms, i) + self._dec_SP() + self._p_eq_pSP('addr')
+        return '\n'.join(instr) + '\n\n' 
+
     def _push_const(self, i: int) -> str:
         # applies to constant memory segment
         # push constant i
-        # *SP = i, SP++ 
+        # *SP=i, SP++ 
         instr0 = ['// push constant i']
         instr = instr0 + self._pSP_eq_const(i) + self._inc_SP()
         return '\n'.join(instr) + '\n\n'
 
-    def _push_pointer(self, i: int) -> str:
-        pass
+    def _push_d(self, d: str) -> str:
+        # applies to pointer and static memory segment
+        # push d i
+        # *SP = d, SP++ 
+        return self._pSP_eq_d(d) + self._inc_SP()
+   
+    def _pop_d(self, d: str) -> str:
+        # applies to pointer and static memory segment
+        # pop d i
+        # SP--, d=*SP 
+        return self._dec_SP() + self._d_eq_pSP(d)
 
+    def _push_pointer(self, i: int) -> str:
+        # applies to pointer memory segment
+        # push pointer 0/1
+        # *SP = THIS/THAT, SP++ 
+        sym = 'THAT' if i else 'THIS'
+        instr0 = ['// push pointer ' + str(i)]
+        instr = instr0 + self._push_d(sym)
+        return '\n'.join(instr) + '\n\n'
+        
     def _pop_pointer(self, i: int) -> str:
-        pass
+        # applies to pointer memory segment
+        # pop pointer 0/1
+        # SP--, THIS/THAT = *SP 
+        sym = 'THAT' if i else 'THIS'
+        instr0 = ['// pop pointer ' + str(i)]
+        instr = instr0 + self._pop_d(sym) 
+        return '\n'.join(instr) + '\n\n'
+
+    def _push_static(self, i: int) -> str:
+        # applies to static memory segment
+        # push static i
+        # *SP = file.i, SP++ 
+        sym = self.file + '.' + str(i)
+        instr0 = ['// push static ' + str(i)]
+        instr = instr0 + self._push_d(sym)
+        return '\n'.join(instr) + '\n\n'
+
+    def _pop_static(self, i: int) -> str:
+        # applies to static memory segment
+        # pop static i
+        # SP--, file.i = *SP 
+        sym = self.file + '.' + str(i)
+        instr0 = ['// pop static ' + str(i)]
+        instr = instr0 + self._pop_d(sym) 
+        return '\n'.join(instr) + '\n\n'
+
+    
 
 ########################################################################
 
@@ -389,16 +436,6 @@ class temp():
         # SP++
 
 
-    
-
-
-
-
-
-#LCL = RAM[1]
-#base addr local segment = 1015
-
-# @SP, @LCL, @ARG, @THIS, @THAT
 
 
 # STATIC
@@ -412,20 +449,6 @@ class temp():
 # M=D
 
 # hack assembler will map on RAM[16] .. RAM[255]
-
-
-## pointer
-## push pointer 0 - acceses THIS
-## *SP = THIS, SP++
-
-## push pointer 1 - acceses THAT
-## *SP = THAT, SP++
-
-## pop pointer 0 - acceses THIS
-## SP--, THIS = *SP
-
-## pop pointer 1 - acceses THAT
-## SP--, THAT = *SP
 
 
 #add
