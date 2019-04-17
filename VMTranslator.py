@@ -271,20 +271,34 @@ class CodeWriter():
     def write(self, command: CommandType, arg1: str, arg2: str):
         pass
 
-    def _increment_SP(self) -> List[str]: 
+    def _inc_SP(self) -> List[str]: 
         return ['// SP++',
                 '@SP', 
                 'M=M+1']
 
-    def _decrement_SP(self) -> List[str]: 
+    def _dec_SP(self) -> List[str]: 
         return ['// SP--',
                 '@SP', 
                 'M=M-1']    
 
-    def _p_eq(self, p: str) -> List[str]: 
-        return ['// *p=D',
-                '@' + p, 
-                'A=M',
+    def _eq_const(self, i: int) -> List[str]: 
+        return ['// D=const',
+                '@' + str(i), 
+                'D=A']    
+
+    def _add_const(self, i: int) -> List[str]: 
+        return ['// D=D+const',
+                '@' + str(i), 
+                'D=D+A']    
+
+    def _eq_d(self, d: str) -> List[str]: 
+        return ['// D=d',
+                '@' + d, 
+                'D=M']    
+
+    def _d_eq(self, d: str) -> List[str]: 
+        return ['// d=D',
+                '@' + d, 
                 'M=D']    
 
     def _eq_p(self, p: str) -> List[str]: 
@@ -293,40 +307,62 @@ class CodeWriter():
                 'A=M',
                 'D=M']    
 
-    def _paddr_eq_pSP(self) -> List[str]:
-        return ['// *addr=*SP'] + self._eq_p('SP') + self._p_eq('addr')
+    def _p_eq(self, p: str) -> List[str]: 
+        return ['// *p=D',
+                '@' + p, 
+                'A=M',
+                'M=D']    
+
+    def _pSP_eq_const(self, i: int) -> List[str]:
+        return ['// *SP=i'] + self._eq_const(i) + self._p_eq('SP')
+
+    def _d_eq_pSP(self, d: str) -> List[str]:
+        return ['// d=*SP'] + self._eq_p('SP') + self._d_eq(d) 
+
+    def _pSP_eq_d(self, d: str) -> List[str]:
+        return ['// *SP=d'] + self._eq_d(d) + self._p_eq('SP')
+
+    def _p_eq_pSP(self, p: str) -> List[str]:
+        return ['// *p=*SP'] + self._eq_p('SP') + self._p_eq(p)
       
-    def _pSP_eq_paddr(self) -> List[str]: 
-        return ['// *SP=*addr'] + self._eq_p('addr') + self._p_eq('SP')
+    def _pSP_eq_p(self, p: str) -> List[str]: 
+        return ['// *SP=*p'] + self._eq_p(p) + self._p_eq('SP')
 
     def _ms_offset(self, ms: str, i: int) -> List[str]: 
         # addr=ms+i
         pms = pointers[ms]
-        si = str(i)
-        return ['// addr=' + pms + '+' + si,
-                '@' + pms,
-                'D=M',
-                '@' + si,
-                'D=D+A',
-                '@addr',
-                'M=D']
-
-    def _pop(self, ms: str, i, int) -> List[str]:
+        instr0 = ['// addr=' + pms + '+' + str(i)]
+        return instr0 + self._eq_d(pms) + self._add_const(i) + self._d_eq('addr')    
+       
+    def _pop(self, ms: str, i: int) -> str:
         # applies to local, argument, this and that memory segments
+        # pop ms i
         # addr=ms+i, SP--, *addr=*SP        
         instr0 = ['// pop ' + ms + ' ' + str(i)]
-        instr = instr0 + self._ms_offset(ms, i) + self._decrement_SP() + self._paddr_eq_pSP()
+        instr = instr0 + self._ms_offset(ms, i) + self._dec_SP() + self._p_eq_pSP('addr')
         return '\n'.join(instr) + '\n\n' 
 
     def _push(self, ms: str, i: int) -> str:
         # applies to local, argument, this and that memory segments
+        # push ms i
         # addr=ms+i, *SP=*addr, SP++       
         instr0 = ['// push ' + ms + ' ' + str(i)]
-        instr = instr0 + self._ms_offset(ms, i) + self._pSP_eq_paddr() + self._increment_SP()
+        instr = instr0 + self._ms_offset(ms, i) + self._pSP_eq_p('addr') + self._inc_SP()
         return '\n'.join(instr) + '\n\n' 
 
+    def _push_const(self, i: int) -> str:
+        # applies to constant memory segment
+        # push constant i
+        # *SP = i, SP++ 
+        instr0 = ['// push constant i']
+        instr = instr0 + self._pSP_eq_const(i) + self._inc_SP()
+        return '\n'.join(instr) + '\n\n'
 
+    def _push_pointer(self, i: int) -> str:
+        pass
 
+    def _pop_pointer(self, i: int) -> str:
+        pass
 
 ########################################################################
 
@@ -364,10 +400,6 @@ class temp():
 
 # @SP, @LCL, @ARG, @THIS, @THAT
 
-
-# push constant i
-# *SP = i, SP++
-# no pop constant operation
 
 # STATIC
 # static.i -> @file.i
@@ -413,10 +445,6 @@ class temp():
 ## SP stored in RAM[0]
 ## stack base addr = 256
 
-
-## push constant i
-## *SP = i
-## SP++
 
 
 
