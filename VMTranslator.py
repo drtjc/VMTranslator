@@ -363,7 +363,7 @@ class CodeWriter():
 
     def _push_d(self, d: str) -> str:
         # applies to pointer and static memory segment
-        # push d i
+        # push d
         # *SP = d, SP++ 
         return self._pSP_eq_d(d) + self._inc_SP()
    
@@ -409,7 +409,9 @@ class CodeWriter():
         instr = instr0 + self._pop_d(sym) 
         return '\n'.join(instr) + '\n\n'
 
-    
+
+### what about temp memory segment
+
 
 ########################################################################
 
