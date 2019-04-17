@@ -1,4 +1,6 @@
-push constant 17
+// commment
+push constant 17 // comment
 push local 2
 add
+
 pop argument 1

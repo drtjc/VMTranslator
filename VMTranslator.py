@@ -198,7 +198,7 @@
 import sys
 import os
 from enum import Enum, auto
-from typing import Dict
+from typing import Dict, List
 
 class CommandType(Enum):
     NONE = auto()
@@ -211,7 +211,11 @@ class CommandType(Enum):
     FUNCTION = auto()
     RETURN = auto()
     CALL = auto()
-    
+
+command_name: Dict[CommandType, str] = {
+    'push': CommandType.PUSH, 
+    'pop': CommandType.POP
+}    
 
 base_addr: Dict[str, int] = {
     'local': 1015
@@ -229,40 +233,130 @@ pointers: Dict[str, str] = {
 class Parser():
 
     def __init__(self):
+        self._empty()
+
+    def _empty(self):
         self.line = ""
+        self.command = ""
         self.command_type = CommandType.NONE
         self.arg1 = ""
         self.arg2 = ""
 
-        ## set SP = 256?
-
     def parse(self, line: str):
+        self.line = line
 
         # remove newline
         # remove leading and trailing spaces
         # remove comments
-        self.line = line.rstrip('\n').strip().split('//')[0].rstrip()
-
-    def _increment_SP(self) -> str:
-        instr = ['// SP++'
-                 '@SP', 
-                 'M=M+1']
-        return '\n'.join(instr) + '\n'
+        self.command = line.rstrip('\n').strip().split('//')[0].rstrip()
         
-    def _decrement_SP(self) -> str:
-        instr = ['// SP--'
-                 '@SP', 
-                 'M=M-1']    
-        return '\n'.join(instr) + '\n'
+        if self.command: # line contains an instruction
+            c = self.command.split() # get components
+            if len(c) == 1: # ARITHMETIC
+                self.command_type = CommandType.ARITHMETIC
+                self.arg1 = c[0].lower()
+            else:
+                self.command_type = command_name[c[0].lower()]
+                self.arg1 = c[1]
+                if len(c) == 3:
+                    self.arg2 = c[2]
+        else:
+            self._empty()
+########################################################################
 
-    def _pop(self, ms: str, i: int) -> str:
-        addr = base_addr[ms] + i
-        self._decrement_SP()
 
-        instr = ['// pop ' + ms + ' ' +str(i)]
+# CodeWriter ###########################################################
+class CodeWriter():
+    
+    def write(self, command: CommandType, arg1: str, arg2: str):
+        pass
+
+    def _increment_SP(self) -> List[str]: 
+        return ['// SP++',
+                '@SP', 
+                'M=M+1']
+
+    def _decrement_SP(self) -> List[str]: 
+        return ['// SP--',
+                '@SP', 
+                'M=M-1']    
+
+    def _p_eq(self, p: str) -> List[str]: 
+        return ['// *p=D',
+                '@' + p, 
+                'A=M',
+                'M=D']    
+
+    def _eq_p(self, p: str) -> List[str]: 
+        return ['// D=*p',
+                '@' + p, 
+                'A=M',
+                'D=M']    
+
+    def _paddr_eq_pSP(self) -> List[str]:
+        return ['// *addr=*SP'] + self._eq_p('SP') + self._p_eq('addr')
+      
+    def _pSP_eq_paddr(self) -> List[str]: 
+        return ['// *SP=*addr'] + self._eq_p('addr') + self._p_eq('SP')
+
+    def _ms_offset(self, ms: str, i: int) -> List[str]: 
+        # addr=ms+i
+        pms = pointers[ms]
+        si = str(i)
+        return ['// addr=' + pms + '+' + si,
+                '@' + pms,
+                'D=M',
+                '@' + si,
+                'D=D+A',
+                '@addr',
+                'M=D']
+
+    def _pop(self, ms: str, i, int) -> List[str]:
+        # applies to local, argument, this and that memory segments
+        # addr=ms+i, SP--, *addr=*SP        
+        instr0 = ['// pop ' + ms + ' ' + str(i)]
+        instr = instr0 + self._ms_offset(ms, i) + self._decrement_SP() + self._paddr_eq_pSP()
+        return '\n'.join(instr) + '\n\n' 
 
     def _push(self, ms: str, i: int) -> str:
+        # applies to local, argument, this and that memory segments
+        # addr=ms+i, *SP=*addr, SP++       
+        instr0 = ['// push ' + ms + ' ' + str(i)]
+        instr = instr0 + self._ms_offset(ms, i) + self._pSP_eq_paddr() + self._increment_SP()
+        return '\n'.join(instr) + '\n\n' 
+
+
+
+
+########################################################################
+
+
+class temp():
+    
+    def _add(self):
         pass
+        # SP--, arg2=*SP, SP--, arg1=*SP, ans=arg1+arg2, *SP=ans, SP++
+        ## SP--
+        # // arg2=*SP
+        # @SP
+        # A=M
+        # D=M
+        ## SP--
+        # // arg1=*SP
+        # @SP
+        # A=M
+        # D=D+M
+        # // *SP = ans
+        # @SP
+        # A=M
+        # M=D
+        # SP++
+
+
+    
+
+
+
 
 
 #LCL = RAM[1]
@@ -312,61 +406,8 @@ class Parser():
 #or
 #not
 
-#pop segment i
-#push segment i
-
 
 ## TEMP - base addr is hard coded as 5
-
-##### FOR LOCAL, ARGUMENT, THIS, THAT
-# pop local 2
-# addr = LCL+2, SP--, *addr=*SP
-
-# // LCL+i
-# @LCL
-# D=M // D = RAM[LCL] - base addr local segment
-# @i // A = i
-# D=D+A // D = RAM[LCL] + i
-# @addr
-# M=D // addr = RAM[LCL] + i
-
-# // SP--
-# @SP
-# M=M-1
-
-# // *addr=*SP
-# @SP
-# A=M // A = RAM[SP]
-# D=M // D = RAM[RAM[SP]]
-# @addr
-# A=M // A = RAM[addr]
-# M=D // RAM[addr] = RAM[RAM[SP]]
-
-
-# push local i
-# addr = LCL+i, *SP=*addr, SP++
-
-
-
-
-
-## D = *p
-## @p
-## A=M
-## D=M
-
-
-## *q = 17
-## @17
-## D=A
-## @q
-## A=M
-## M=D
-
-
-## x++
-## @x
-## M=M+1
 
 
 ## SP stored in RAM[0]
@@ -377,15 +418,6 @@ class Parser():
 ## *SP = i
 ## SP++
 
-
-# CodeWriter ###########################################################
-class CodeWriter():
-    
-    def write_arithmetic(self, command: CommandType):
-        pass
-
-    def write_push_pop(self, command: CommandType, segment: str, index: int):
-        pass
 
 
 
@@ -411,4 +443,16 @@ class Main():
 
 ########################################################################
 if __name__ == "__main__":
-    Main(sys.argv[1]).go()
+    #Main(sys.argv[1]).go()
+    p = Parser()
+
+    s1 = 'pop local 2'
+    s2 = '// commment'
+    s3 = 'add // comment'
+
+    p.parse(s1)
+    print(p.line)
+    print(p.command)
+    print(p.command_type)
+    print(p.arg1)
+    print(p.arg2)
