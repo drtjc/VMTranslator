@@ -212,21 +212,17 @@ class CommandType(Enum):
     RETURN = auto()
     CALL = auto()
 
-command_name: Dict[CommandType, str] = {
+command_: Dict[str, CommandType] = {
     'push': CommandType.PUSH, 
     'pop': CommandType.POP
 }    
 
-base_addr: Dict[str, int] = {
-    'local': 1015
-}
-
 pointers: Dict[str, str] = {
-    'stack': 'SP',
     'local': 'LCL',
     'argument': 'ARG',
     'this': 'THIS',
-    'that': 'THAT'
+    'that': 'THAT',
+    'temp': '5'
 }
 
 # Parser ###############################################################
@@ -237,7 +233,8 @@ class Parser():
 
     def _empty(self):
         self.line = ""
-        self.command = ""
+        self.instr = ""
+        self.command_name = ""
         self.command_type = CommandType.NONE
         self.arg1 = ""
         self.arg2 = ""
@@ -248,15 +245,16 @@ class Parser():
         # remove newline
         # remove leading and trailing spaces
         # remove comments
-        self.command = line.rstrip('\n').strip().split('//')[0].rstrip()
+        self.instr = line.rstrip('\n').strip().split('//')[0].rstrip()
         
-        if self.command: # line contains an instruction
-            c = self.command.split() # get components
+        if self.instr: # line contains an instruction
+            c = self.instr.split() # get components
+            self.command_name = c[0].lower()
             if len(c) == 1: # ARITHMETIC
                 self.command_type = CommandType.ARITHMETIC
                 self.arg1 = c[0].lower()
             else:
-                self.command_type = command_name[c[0].lower()]
+                self.command_type = command_[c[0].lower()]
                 self.arg1 = c[1]
                 if len(c) == 3:
                     self.arg2 = c[2]
@@ -270,9 +268,27 @@ class CodeWriter():
     
     def __init__(self, file: str):
         self.file = file
+        self.idx = 0
 
-    def write(self, command: CommandType, arg1: str, arg2: str):
-        pass
+    def write(self, p: Parser) -> str:
+    #command: CommandType, arg1: str, arg2: str, command_n: str) -> str:
+        if p.command_type == CommandType.NONE:
+            return ''
+        
+        elif p.command_type == CommandType.ARITHMETIC:
+            return getattr(self, '_' + p.arg1)()
+        
+        elif p.command_type in [CommandType.PUSH, CommandType.POP]:
+            # arg1 is memory segment, arg2 is offset
+            if p.arg1 in pointers:
+                # local, argument, this, that and temp memory segments
+                d = False if p.arg1 == 'temp' else True
+                return getattr(self, '_' + p.command_name + '_p')(p.arg1, int(p.arg2), d)
+            else:
+                return getattr(self, '_' + p.command_name + '_' + p.arg1)(int(p.arg2))
+
+        else:
+            pass
 
     def _inc_SP(self) -> List[str]: 
         return ['// SP++',
@@ -331,29 +347,30 @@ class CodeWriter():
     def _pSP_eq_p(self, p: str) -> List[str]: 
         return ['// *SP=*p'] + self._eq_p(p) + self._p_eq('SP')
 
-    def _ms_offset(self, ms: str, i: int) -> List[str]: 
+    def _ms_offset(self, ms: str, i: int, d: bool = True) -> List[str]: 
         # addr=ms+i
         pms = pointers[ms]
         instr0 = ['// addr=' + pms + '+' + str(i)]
-        return instr0 + self._eq_d(pms) + self._add_const(i) + self._d_eq('addr')    
+        instr1 = self._eq_d(pms) if d else self._eq_const(pms) 
+        return instr0 + instr1 + self._add_const(i) + self._d_eq('addr')    
        
-    def _push_p(self, ms: str, i: int) -> str:
-        # applies to local, argument, this and that memory segments
+    def _push_p(self, ms: str, i: int, d: bool = True) -> str:
+        # applies to local, argument, this, that and temp (wih d = False) memory segments 
         # push ms i
         # addr=ms+i, *SP=*addr, SP++       
         instr0 = ['// push ' + ms + ' ' + str(i)]
-        instr = instr0 + self._ms_offset(ms, i) + self._pSP_eq_p('addr') + self._inc_SP()
+        instr = instr0 + self._ms_offset(ms, i, d) + self._pSP_eq_p('addr') + self._inc_SP()
         return '\n'.join(instr) + '\n\n' 
 
-    def _pop_p(self, ms: str, i: int) -> str:
-        # applies to local, argument, this and that memory segments
+    def _pop_p(self, ms: str, i: int, d: bool = True) -> str:
+        # applies to local, argument, this, that and temp (with d = False) memory segments
         # pop ms i
         # addr=ms+i, SP--, *addr=*SP        
         instr0 = ['// pop ' + ms + ' ' + str(i)]
-        instr = instr0 + self._ms_offset(ms, i) + self._dec_SP() + self._p_eq_pSP('addr')
+        instr = instr0 + self._ms_offset(ms, i, d) + self._dec_SP() + self._p_eq_pSP('addr')
         return '\n'.join(instr) + '\n\n' 
 
-    def _push_const(self, i: int) -> str:
+    def _push_constant(self, i: int) -> str:
         # applies to constant memory segment
         # push constant i
         # *SP=i, SP++ 
@@ -409,70 +426,102 @@ class CodeWriter():
         instr = instr0 + self._pop_d(sym) 
         return '\n'.join(instr) + '\n\n'
 
-
-### what about temp memory segment
-
-
-########################################################################
-
-
-class temp():
     
+    ## ARITHMETIC    
+
+    def _pSP(self):
+        return ['@SP', 
+                'A=M']
+
+    def _unary(self, command: str, code: List[str]): 
+        instr0 = ['// ' + command]
+        instr = instr0 + self._dec_SP() + self._pSP() + code + \
+                         self._inc_SP()
+        return '\n'.join(instr) + '\n\n'
+
+    def _binary(self, command: str, code: List[str]):
+        instr0 = ['// ' + command]
+        instr = instr0 + self._dec_SP() + self._eq_p('SP') + \
+                         self._dec_SP() + self._pSP() + code + \
+                         self._p_eq('SP') + self._inc_SP()
+        return '\n'.join(instr) + '\n\n'
+
     def _add(self):
+        return self._binary('add', ['D=D+M'])
+
+    def _sub(self):
+        return self._binary('sub', ['D=M-D'])
+
+    def _neg(self):
+        return self._unary('neg', ['M=-M'])
+  
+    def _eq(self):
         pass
-        # SP--, arg2=*SP, SP--, arg1=*SP, ans=arg1+arg2, *SP=ans, SP++
-        ## SP--
-        # // arg2=*SP
+        # SP--, put arg1 in D, SP--
+        
+        #  // SP--
+        # @SP
+        # M=M-1
+        
+        # // D=*p
         # @SP
         # A=M
         # D=M
-        ## SP--
-        # // arg1=*SP
+        
+        # // SP--
+        # @SP
+        # M=M-1
+        
         # @SP
         # A=M
-        # D=D+M
-        # // *SP = ans
+        # D=M-D   // this is sub to this point
+        
+        #### new code for comparison
+        # @JMP.idx
+        # D;JEQ  D;JGT   D:JLT
+        # D=0              // False
+        # (JMP.idx)
+        # D=-1             // True
+
+
+    
+
+
+
+
+
+        # // *p=D
         # @SP
         # A=M
         # M=D
-        # SP++
+        
+        # // SP++
+        # @SP
+        # M=M+1       
+
+
+
+    def _gt(self):
+        pass
+
+    def _lt(self):
+        pass
+
+    def _and(self):
+        return self._binary('and', ['D=D&M'])
+
+    def _or(self):
+        return self._binary('or', ['D=D|M'])
+
+    def _not(self):
+        return self._unary('not', ['M=!M'])
+ 
 
 
 
 
-# STATIC
-# static.i -> @file.i
-# e.g if test.vm
 
-# static 5 -> @test.5
-# pop static 5
-# D = stack.pop
-# @test.5
-# M=D
-
-# hack assembler will map on RAM[16] .. RAM[255]
-
-
-#add
-#sub
-#neg
-#eq
-#gt
-#lt
-#and
-#or
-#not
-
-
-## TEMP - base addr is hard coded as 5
-
-
-## SP stored in RAM[0]
-## stack base addr = 256
-
-
-
-
+########################################################################
 
 
 # Main #################################################################
@@ -480,32 +529,19 @@ class Main():
     
     def __init__(self, file: str):
         self.parser = Parser()
-        self.code_writer = CodeWriter()
         self.filename_in = file
-        self.filename_out = os.path.splitext(file)[0] + ".asm"   
+        
+        file_no_ext = os.path.splitext(file)[0]
+        self.code_writer = CodeWriter(file_no_ext)
+        self.filename_out = file_no_ext + ".asm"   
 
     def go(self):
         with open(self.filename_in, 'r') as f_in:    
             with open(self.filename_out, 'w') as f_out:
                 for line in f_in:
-                    f_out.write(line)
-                    #l = p.parse(line)
-                    #if l:
-                    #    f_out.write(c.code(l) + '\n')
-
-
+                    self.parser.parse(line)
+                    l_out = self.code_writer.write(self.parser)
+                    f_out.write(l_out)
 ########################################################################
 if __name__ == "__main__":
-    #Main(sys.argv[1]).go()
-    p = Parser()
-
-    s1 = 'pop local 2'
-    s2 = '// commment'
-    s3 = 'add // comment'
-
-    p.parse(s1)
-    print(p.line)
-    print(p.command)
-    print(p.command_type)
-    print(p.arg1)
-    print(p.arg2)
+    Main(sys.argv[1]).go()
