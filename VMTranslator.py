@@ -200,6 +200,8 @@ import os
 from enum import Enum, auto
 from typing import Dict, List
 
+import inspect
+
 class CommandType(Enum):
     NONE = auto()
     ARITHMETIC = auto()
@@ -271,7 +273,6 @@ class CodeWriter():
         self.idx = 0
 
     def write(self, p: Parser) -> str:
-    #command: CommandType, arg1: str, arg2: str, command_n: str) -> str:
         if p.command_type == CommandType.NONE:
             return ''
         
@@ -429,6 +430,13 @@ class CodeWriter():
     
     ## ARITHMETIC    
 
+    
+    
+    # inspect.stack()[1][3]   // gets calling function name
+
+    #import sys
+    # print sys._getframe().f_back.f_code.co_name
+
     def _pSP(self):
         return ['@SP', 
                 'A=M']
@@ -440,6 +448,10 @@ class CodeWriter():
         return '\n'.join(instr) + '\n\n'
 
     def _binary(self, command: str, code: List[str]):
+    
+        print(inspect.stack()[1][3])
+        print(sys._getframe().f_back.f_code.co_name)
+
         instr0 = ['// ' + command]
         instr = instr0 + self._dec_SP() + self._eq_p('SP') + \
                          self._dec_SP() + self._pSP() + code + \
