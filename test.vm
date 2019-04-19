@@ -1,9 +1,9 @@
 // commment
 
-eq
-gt
-push constant 15 // comment
-push local 2
-add
-sub
-pop argument 100
+//eq
+//gt
+push constant 10 // comment
+//push local 2
+//add
+//sub
+//pop argument 100

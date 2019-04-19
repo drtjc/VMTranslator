@@ -1,51 +1,8 @@
-    
-#     comp_table = {}
-#     comp_table['0'] = ('0', '101010')
-#     comp_table['1'] = ('0', '111111')
-#     comp_table['-1'] = ('0', '111010')
-#     comp_table['D'] = ('0', '001100')
-#     comp_table['A'] = ('0', '110000')    
-#     comp_table['!D'] = ('0', '001101')
-#     comp_table['!A'] = ('0', '110001')
-#     comp_table['-D'] = ('0', '001111')
-#     comp_table['-A'] = ('0', '110011')
-#     comp_table['D+1'] = ('0', '011111')
-#     comp_table['A+1'] = ('0', '110111')
-#     comp_table['D-1'] = ('0', '001110')
-#     comp_table['A-1'] = ('0', '110010')
-#     comp_table['D+A'] = ('0', '000010')
-#     comp_table['D-A'] = ('0', '010011')
-#     comp_table['A-D'] = ('0', '000111')
-#     comp_table['D&A'] = ('0', '000000')
-#     comp_table['D|A'] = ('0', '010101')
-#     comp_table['M'] = ('1', '110000')
-#     comp_table['!M'] = ('1', '110001')
-#     comp_table['-M'] = ('1', '110011')
-#     comp_table['M+1'] = ('1', '110111')
-#     comp_table['M-1'] = ('1', '110010')
-#     comp_table['D+M'] = ('1', '000010')
-#     comp_table['D-M'] = ('1', '010011')
-#     comp_table['M-D'] = ('1', '000111')
-#     comp_table['D&M'] = ('1', '000000')
-#     comp_table['D|M'] = ('1', '010101')
-
-#     jump_table = {}
-#     jump_table[''] = '000'
-#     jump_table['JGT'] = '001'
-#     jump_table['JEQ'] = '010'
-#     jump_table['JGE'] = '011'
-#     jump_table['JLT'] = '100'
-#     jump_table['JNE'] = '101'
-#     jump_table['JLE'] = '110'
-#     jump_table['JMP'] = '111'
- 
-
 import sys
 import os
 from enum import Enum, auto
 from typing import Dict, List
 
-import inspect
 
 class CommandType(Enum):
     NONE = auto()
@@ -274,13 +231,6 @@ class CodeWriter():
 
     
     ## ARITHMETIC    
-
-    
-    
-    # inspect.stack()[1][3]   // gets calling function name
-    #import sys
-    # print sys._getframe().f_back.f_code.co_name
-
     def _pSP(self) -> List[str]:
         return ['@SP', 
                 'A=M']
@@ -300,13 +250,17 @@ class CodeWriter():
 
     def _jmp(self, command: str, j_code: str) -> str:
 
-        lbl = 'JMP_' + str(self.idx)
+        lbl_t = 'JMPt_' + str(self.idx)
+        lbl_f = 'JMPf_' + str(self.idx)
         code = ['D=M-D',
-                '@' + lbl,
-                'D=;' + j_code,
+                '@' + lbl_t,
+                'D;' + j_code,
                 'D=0',
-                '(' + lbl + ')',
-                'D=-1']
+                '@' + lbl_f,
+                '0;JMP',
+                '(' + lbl_t + ')',
+                'D=-1',
+                '(' + lbl_f + ')']
 
         self.idx += 1
         return self._binary(command, code)
