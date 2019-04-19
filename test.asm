@@ -1,3 +1,57 @@
+// eq
+// SP--
+@SP
+M=M-1
+// D=*p
+@SP
+A=M
+D=M
+// SP--
+@SP
+M=M-1
+@SP
+A=M
+D=M-D
+@JMP_0
+D=;JEQ
+D=0
+(JMP_0)
+D=-1
+// *p=D
+@SP
+A=M
+M=D
+// SP++
+@SP
+M=M+1
+
+// gt
+// SP--
+@SP
+M=M-1
+// D=*p
+@SP
+A=M
+D=M
+// SP--
+@SP
+M=M-1
+@SP
+A=M
+D=M-D
+@JMP_1
+D=;JGT
+D=0
+(JMP_1)
+D=-1
+// *p=D
+@SP
+A=M
+M=D
+// SP++
+@SP
+M=M+1
+
 // push constant i
 // *SP=i
 // D=const

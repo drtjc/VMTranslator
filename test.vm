@@ -1,4 +1,7 @@
 // commment
+
+eq
+gt
 push constant 15 // comment
 push local 2
 add
