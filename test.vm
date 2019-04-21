@@ -2,7 +2,10 @@
 
 //eq
 //gt
+label LOOP_START
 push constant 10 // comment
+goto TEST
+if-goto TOM
 //push local 2
 //add
 //sub

@@ -1,7 +1,44 @@
-// push constant i
+// push argument 1
+// addr=ARG+1
+// D=d
+@ARG
+D=M
+// D=D+const
+@1
+D=D+A
+// d=D
+@addr
+M=D
+// *SP=*p
+// D=*p
+@addr
+A=M
+D=M
+// *p=D
+@SP
+A=M
+M=D
+// SP++
+@SP
+M=M+1
+
+// pop pointer 1
+// SP--
+@SP
+M=M-1
+// d=*SP
+// D=*p
+@SP
+A=M
+D=M
+// d=D
+@THAT
+M=D
+
+// push constant 0
 // *SP=i
 // D=const
-@10
+@0
 D=A
 // *p=D
 @SP
@@ -11,10 +48,10 @@ M=D
 @SP
 M=M+1
 
-// pop local 0
-// addr=LCL+0
+// pop that 0
+// addr=THAT+0
 // D=d
-@LCL
+@THAT
 D=M
 // D=D+const
 @0
@@ -35,10 +72,10 @@ D=M
 A=M
 M=D
 
-// push constant i
+// push constant 1
 // *SP=i
 // D=const
-@21
+@1
 D=A
 // *p=D
 @SP
@@ -48,47 +85,10 @@ M=D
 @SP
 M=M+1
 
-// push constant i
-// *SP=i
-// D=const
-@22
-D=A
-// *p=D
-@SP
-A=M
-M=D
-// SP++
-@SP
-M=M+1
-
-// pop argument 2
-// addr=ARG+2
+// pop that 1
+// addr=THAT+1
 // D=d
-@ARG
-D=M
-// D=D+const
-@2
-D=D+A
-// d=D
-@addr
-M=D
-// SP--
-@SP
-M=M-1
-// *p=*SP
-// D=*p
-@SP
-A=M
-D=M
-// *p=D
-@addr
-A=M
-M=D
-
-// pop argument 1
-// addr=ARG+1
-// D=d
-@ARG
+@THAT
 D=M
 // D=D+const
 @1
@@ -109,10 +109,34 @@ D=M
 A=M
 M=D
 
-// push constant i
+// push argument 0
+// addr=ARG+0
+// D=d
+@ARG
+D=M
+// D=D+const
+@0
+D=D+A
+// d=D
+@addr
+M=D
+// *SP=*p
+// D=*p
+@addr
+A=M
+D=M
+// *p=D
+@SP
+A=M
+M=D
+// SP++
+@SP
+M=M+1
+
+// push constant 2
 // *SP=i
 // D=const
-@36
+@2
 D=A
 // *p=D
 @SP
@@ -122,13 +146,35 @@ M=D
 @SP
 M=M+1
 
-// pop this 6
-// addr=THIS+6
+// sub
+// SP--
+@SP
+M=M-1
+// D=*p
+@SP
+A=M
+D=M
+// SP--
+@SP
+M=M-1
+@SP
+A=M
+D=M-D
+// *p=D
+@SP
+A=M
+M=D
+// SP++
+@SP
+M=M+1
+
+// pop argument 0
+// addr=ARG+0
 // D=d
-@THIS
+@ARG
 D=M
 // D=D+const
-@6
+@0
 D=D+A
 // d=D
 @addr
@@ -146,11 +192,23 @@ D=M
 A=M
 M=D
 
-// push constant i
-// *SP=i
-// D=const
-@42
-D=A
+(MAIN_LOOP_START)
+// push argument 0
+// addr=ARG+0
+// D=d
+@ARG
+D=M
+// D=D+const
+@0
+D=D+A
+// d=D
+@addr
+M=D
+// *SP=*p
+// D=*p
+@addr
+A=M
+D=M
 // *p=D
 @SP
 A=M
@@ -159,42 +217,91 @@ M=D
 @SP
 M=M+1
 
-// push constant i
-// *SP=i
-// D=const
-@45
-D=A
-// *p=D
+// if-goto COMPUTE_ELEMENT
+// SP--
+@SP
+M=M-1
+// D=*p
 @SP
 A=M
-M=D
-// SP++
-@SP
-M=M+1
+D=M
+@COMPUTE_ELEMENT
+D;JNE
 
-// pop that 5
-// addr=THAT+5
+// goto END_PROGRAM
+@END_PROGRAM
+0;JMP
+
+(COMPUTE_ELEMENT)
+// push that 0
+// addr=THAT+0
 // D=d
 @THAT
 D=M
 // D=D+const
-@5
+@0
 D=D+A
 // d=D
 @addr
 M=D
+// *SP=*p
+// D=*p
+@addr
+A=M
+D=M
+// *p=D
+@SP
+A=M
+M=D
+// SP++
+@SP
+M=M+1
+
+// push that 1
+// addr=THAT+1
+// D=d
+@THAT
+D=M
+// D=D+const
+@1
+D=D+A
+// d=D
+@addr
+M=D
+// *SP=*p
+// D=*p
+@addr
+A=M
+D=M
+// *p=D
+@SP
+A=M
+M=D
+// SP++
+@SP
+M=M+1
+
+// add
 // SP--
 @SP
 M=M-1
-// *p=*SP
 // D=*p
 @SP
 A=M
 D=M
+// SP--
+@SP
+M=M-1
+@SP
+A=M
+D=D+M
 // *p=D
-@addr
+@SP
 A=M
 M=D
+// SP++
+@SP
+M=M+1
 
 // pop that 2
 // addr=THAT+2
@@ -220,10 +327,23 @@ D=M
 A=M
 M=D
 
-// push constant i
+// push pointer 1
+// *SP=d
+// D=d
+@THAT
+D=M
+// *p=D
+@SP
+A=M
+M=D
+// SP++
+@SP
+M=M+1
+
+// push constant 1
 // *SP=i
 // D=const
-@510
+@1
 D=A
 // *p=D
 @SP
@@ -233,34 +353,45 @@ M=D
 @SP
 M=M+1
 
-// pop temp 6
-// addr=5+6
-// D=const
-@5
-D=A
-// D=D+const
-@6
-D=D+A
-// d=D
-@addr
-M=D
+// add
 // SP--
 @SP
 M=M-1
-// *p=*SP
 // D=*p
 @SP
 A=M
 D=M
+// SP--
+@SP
+M=M-1
+@SP
+A=M
+D=D+M
 // *p=D
-@addr
+@SP
 A=M
 M=D
+// SP++
+@SP
+M=M+1
 
-// push local 0
-// addr=LCL+0
+// pop pointer 1
+// SP--
+@SP
+M=M-1
+// d=*SP
+// D=*p
+@SP
+A=M
+D=M
+// d=D
+@THAT
+M=D
+
+// push argument 0
+// addr=ARG+0
 // D=d
-@LCL
+@ARG
 D=M
 // D=D+const
 @0
@@ -281,22 +412,11 @@ M=D
 @SP
 M=M+1
 
-// push that 5
-// addr=THAT+5
-// D=d
-@THAT
-D=M
-// D=D+const
-@5
-D=D+A
-// d=D
-@addr
-M=D
-// *SP=*p
-// D=*p
-@addr
-A=M
-D=M
+// push constant 1
+// *SP=i
+// D=const
+@1
+D=A
 // *p=D
 @SP
 A=M
@@ -305,7 +425,7 @@ M=D
 @SP
 M=M+1
 
-// add
+// sub
 // SP--
 @SP
 M=M-1
@@ -318,7 +438,7 @@ D=M
 M=M-1
 @SP
 A=M
-D=D+M
+D=M-D
 // *p=D
 @SP
 A=M
@@ -327,187 +447,32 @@ M=D
 @SP
 M=M+1
 
-// push argument 1
-// addr=ARG+1
+// pop argument 0
+// addr=ARG+0
 // D=d
 @ARG
 D=M
 // D=D+const
-@1
+@0
 D=D+A
 // d=D
 @addr
 M=D
-// *SP=*p
+// SP--
+@SP
+M=M-1
+// *p=*SP
 // D=*p
+@SP
+A=M
+D=M
+// *p=D
 @addr
 A=M
-D=M
-// *p=D
-@SP
-A=M
 M=D
-// SP++
-@SP
-M=M+1
 
-// sub
-// SP--
-@SP
-M=M-1
-// D=*p
-@SP
-A=M
-D=M
-// SP--
-@SP
-M=M-1
-@SP
-A=M
-D=M-D
-// *p=D
-@SP
-A=M
-M=D
-// SP++
-@SP
-M=M+1
+// goto MAIN_LOOP_START
+@MAIN_LOOP_START
+0;JMP
 
-// push this 6
-// addr=THIS+6
-// D=d
-@THIS
-D=M
-// D=D+const
-@6
-D=D+A
-// d=D
-@addr
-M=D
-// *SP=*p
-// D=*p
-@addr
-A=M
-D=M
-// *p=D
-@SP
-A=M
-M=D
-// SP++
-@SP
-M=M+1
-
-// push this 6
-// addr=THIS+6
-// D=d
-@THIS
-D=M
-// D=D+const
-@6
-D=D+A
-// d=D
-@addr
-M=D
-// *SP=*p
-// D=*p
-@addr
-A=M
-D=M
-// *p=D
-@SP
-A=M
-M=D
-// SP++
-@SP
-M=M+1
-
-// add
-// SP--
-@SP
-M=M-1
-// D=*p
-@SP
-A=M
-D=M
-// SP--
-@SP
-M=M-1
-@SP
-A=M
-D=D+M
-// *p=D
-@SP
-A=M
-M=D
-// SP++
-@SP
-M=M+1
-
-// sub
-// SP--
-@SP
-M=M-1
-// D=*p
-@SP
-A=M
-D=M
-// SP--
-@SP
-M=M-1
-@SP
-A=M
-D=M-D
-// *p=D
-@SP
-A=M
-M=D
-// SP++
-@SP
-M=M+1
-
-// push temp 6
-// addr=5+6
-// D=const
-@5
-D=A
-// D=D+const
-@6
-D=D+A
-// d=D
-@addr
-M=D
-// *SP=*p
-// D=*p
-@addr
-A=M
-D=M
-// *p=D
-@SP
-A=M
-M=D
-// SP++
-@SP
-M=M+1
-
-// add
-// SP--
-@SP
-M=M-1
-// D=*p
-@SP
-A=M
-D=M
-// SP--
-@SP
-M=M-1
-@SP
-A=M
-D=D+M
-// *p=D
-@SP
-A=M
-M=D
-// SP++
-@SP
-M=M+1
-
+(END_PROGRAM)

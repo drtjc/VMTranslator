@@ -1,7 +1,7 @@
-// push constant i
+// push constant 0
 // *SP=i
 // D=const
-@3030
+@0
 D=A
 // *p=D
 @SP
@@ -11,65 +11,13 @@ M=D
 @SP
 M=M+1
 
-// pop pointer 0
-// SP--
-@SP
-M=M-1
-// d=*SP
-// D=*p
-@SP
-A=M
-D=M
-// d=D
-@THIS
-M=D
-
-// push constant i
-// *SP=i
-// D=const
-@3040
-D=A
-// *p=D
-@SP
-A=M
-M=D
-// SP++
-@SP
-M=M+1
-
-// pop pointer 1
-// SP--
-@SP
-M=M-1
-// d=*SP
-// D=*p
-@SP
-A=M
-D=M
-// d=D
-@THAT
-M=D
-
-// push constant i
-// *SP=i
-// D=const
-@32
-D=A
-// *p=D
-@SP
-A=M
-M=D
-// SP++
-@SP
-M=M+1
-
-// pop this 2
-// addr=THIS+2
+// pop local 0
+// addr=LCL+0
 // D=d
-@THIS
+@LCL
 D=M
 // D=D+const
-@2
+@0
 D=D+A
 // d=D
 @addr
@@ -87,47 +35,22 @@ D=M
 A=M
 M=D
 
-// push constant i
-// *SP=i
-// D=const
-@46
-D=A
-// *p=D
-@SP
-A=M
-M=D
-// SP++
-@SP
-M=M+1
-
-// pop that 6
-// addr=THAT+6
+(LOOP_START)
+// push argument 0
+// addr=ARG+0
 // D=d
-@THAT
+@ARG
 D=M
 // D=D+const
-@6
+@0
 D=D+A
 // d=D
 @addr
 M=D
-// SP--
-@SP
-M=M-1
-// *p=*SP
+// *SP=*p
 // D=*p
-@SP
-A=M
-D=M
-// *p=D
 @addr
 A=M
-M=D
-
-// push pointer 0
-// *SP=d
-// D=d
-@THIS
 D=M
 // *p=D
 @SP
@@ -137,10 +60,21 @@ M=D
 @SP
 M=M+1
 
-// push pointer 1
-// *SP=d
+// push local 0
+// addr=LCL+0
 // D=d
-@THAT
+@LCL
+D=M
+// D=D+const
+@0
+D=D+A
+// d=D
+@addr
+M=D
+// *SP=*p
+// D=*p
+@addr
+A=M
 D=M
 // *p=D
 @SP
@@ -172,13 +106,37 @@ M=D
 @SP
 M=M+1
 
-// push this 2
-// addr=THIS+2
+// pop local 0
+// addr=LCL+0
 // D=d
-@THIS
+@LCL
 D=M
 // D=D+const
-@2
+@0
+D=D+A
+// d=D
+@addr
+M=D
+// SP--
+@SP
+M=M-1
+// *p=*SP
+// D=*p
+@SP
+A=M
+D=M
+// *p=D
+@addr
+A=M
+M=D
+
+// push argument 0
+// addr=ARG+0
+// D=d
+@ARG
+D=M
+// D=D+const
+@0
 D=D+A
 // d=D
 @addr
@@ -188,6 +146,19 @@ M=D
 @addr
 A=M
 D=M
+// *p=D
+@SP
+A=M
+M=D
+// SP++
+@SP
+M=M+1
+
+// push constant 1
+// *SP=i
+// D=const
+@1
+D=A
 // *p=D
 @SP
 A=M
@@ -218,13 +189,37 @@ M=D
 @SP
 M=M+1
 
-// push that 6
-// addr=THAT+6
+// pop argument 0
+// addr=ARG+0
 // D=d
-@THAT
+@ARG
 D=M
 // D=D+const
-@6
+@0
+D=D+A
+// d=D
+@addr
+M=D
+// SP--
+@SP
+M=M-1
+// *p=*SP
+// D=*p
+@SP
+A=M
+D=M
+// *p=D
+@addr
+A=M
+M=D
+
+// push argument 0
+// addr=ARG+0
+// D=d
+@ARG
+D=M
+// D=D+const
+@0
 D=D+A
 // d=D
 @addr
@@ -242,7 +237,7 @@ M=D
 @SP
 M=M+1
 
-// add
+// if-goto LOOP_START
 // SP--
 @SP
 M=M-1
@@ -250,12 +245,25 @@ M=M-1
 @SP
 A=M
 D=M
-// SP--
-@SP
-M=M-1
-@SP
+@LOOP_START
+D;JNE
+
+// push local 0
+// addr=LCL+0
+// D=d
+@LCL
+D=M
+// D=D+const
+@0
+D=D+A
+// d=D
+@addr
+M=D
+// *SP=*p
+// D=*p
+@addr
 A=M
-D=D+M
+D=M
 // *p=D
 @SP
 A=M
