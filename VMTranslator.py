@@ -71,8 +71,8 @@ class Parser():
 # CodeWriter ###########################################################
 class CodeWriter():
     
-    def __init__(self, file):
-        self.file = file
+    def __init__(self):
+        self.file = ""
         self.idx = 0
 
     def write(self, p):
@@ -315,22 +315,36 @@ class VMTranslator():
     
     def __init__(self, file):
         self.parser = Parser()
-        self.filename_in = file
+        self.code_writer = CodeWriter()
 
-        #file_no_ext = os.path.basename(os.path.splitext(file)[0])
-        #file_no_ext = os.path.splitext(os.path.basename(file))[0]
-        file_no_ext = os.path.splitext(file)[0]
+        absfile = os.path.abspath(file).rstrip(os.sep)
+        basefile = os.path.basename(absfile)
+        absfile_no_ext, file_ext = os.path.splitext(absfile)
+        basefile_no_ext, _ = os.path.splitext(basefile)
+
+        self.filename_out = absfile_no_ext + ".asm"   
+
+        self.filenames_in = []
+        if not file_ext: # directory
+            for root, _, files in os.walk(absfile):
+                for f in files:
+                    f_absfile = os.path.join(root, f)
+                    f_basefile_no_ext, f_ext = os.path.splitext(f)
+                    if f_ext == '.vm':
+                        self.filenames_in.append((f_absfile, f_basefile_no_ext))      
+        else: # file
+            self.filenames_in = [(absfile, basefile_no_ext)]
         
-        self.code_writer = CodeWriter("HACK")
-        self.filename_out = file_no_ext + ".asm"   
-
     def main(self):
-        with open(self.filename_in, 'r') as f_in:    
-            with open(self.filename_out, 'w') as f_out:
-                for line in f_in:
-                    self.parser.parse(line)
-                    l_out = self.code_writer.write(self.parser)
-                    f_out.write(l_out)
-########################################################################
+        with open(self.filename_out, 'w') as f_out:
+            for filename_in in self.filenames_in:
+                with open(filename_in[0], 'r') as f_in:
+                    self.code_writer.file = filename_in[1]
+                    for line in f_in:
+                        self.parser.parse(line)
+                        l_out = self.code_writer.write(self.parser)
+                        f_out.write(l_out)
+
+# ########################################################################
 if __name__ == "__main__":
     VMTranslator(sys.argv[1]).main()

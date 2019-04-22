@@ -1,4 +1,3 @@
-(LOOP_START)
 // push constant 10
 // *SP=i
 // D=const
@@ -12,25 +11,10 @@ M=D
 @SP
 M=M+1
 
-// goto TEST
-@TEST
-0;JMP
-
-// if-goto TOM
-// SP--
-@SP
-M=M-1
-// D=*p
-@SP
-A=M
-D=M
-@TOM
-D;JNE
-
-// push static 4
+// push static 88
 // *SP=d
 // D=d
-@test.4
+@test2.88
 D=M
 // *p=D
 @SP
